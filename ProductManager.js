@@ -26,10 +26,15 @@ export default class ProductManager {
 
     async addProduct(product) {
 
+
+
         const products = await this.getProducts()
+
+
         const id = await this.#createId(products)
         const code = await this.#createCode(products)
-        const newProducts = { id, code, ...product }
+        const status = true
+        const newProducts = { id, code, status, ...product }
         products.push(newProducts)
         await this.#saveProducts(products)
         return newProducts
@@ -40,39 +45,19 @@ export default class ProductManager {
 
         const products = await this.getProducts()
         const product = products.find(p => p.id === id)
-        if (product) {
 
-            return product
 
-        } else {
+        return product
 
-            return 'El producto no existe'
-
-        }
 
     }
 
     async deleteProductById(id) {
 
         const products = await this.getProducts()
-        let checkExist = false;
         let arrayNewProducts = []
-
-        products.forEach(element => {
-
-            if (element.id === id) {
-                return checkExist = true;
-            }
-        })
-
-        if (checkExist !== true) {
-
-            console.log("No existe el producto")
-        } else {
-            arrayNewProducts = products.filter((p) => p.id !== id)
-            await this.#saveProducts(arrayNewProducts)
-        }
-
+        arrayNewProducts = products.filter((p) => p.id !== id)
+        await this.#saveProducts(arrayNewProducts)
 
     }
 
@@ -80,14 +65,9 @@ export default class ProductManager {
 
         const products = await this.getProducts()
         const indexProduct = products.findIndex(p => p.id === id)
-        if (indexProduct === -1) {
-            return 'Usuario no encontrado'
-        }
         const updatedProduct = { ...products[indexProduct], ...obj }
         products.splice(indexProduct, 1, updatedProduct)
         await this.#saveProducts(products)
-
-
 
     }
 
@@ -137,63 +117,3 @@ export default class ProductManager {
     }
 
 }
-
-/* const producto1 = {
-
-    title: "GFORCE RTX 4090",
-    description: "Placa de video",
-    price: 560000,
-    thumbnail: "/image.jpg",
-    stock: 30
-
-} */
-/* const producto2 = {
-
-    title: "GFORCE RTX 3090",
-    description: "Placa de video",
-    price: 360000,
-    thumbnail: "/image.jpg",
-    stock: 15
-
-}
-const producto3 = {
-
-    title: "Asrock A320M-HDV R4.0 Ryzen M-ATX ",
-    description: "Motherboard",
-    price: 20000,
-    thumbnail: "/image.jpg",
-    stock: 10
-
-}
-const producto4 = {
-
-    title: "GeiL DDR4 16GB 3000MHz Super Luce RGB Black",
-    description: "Motherboard",
-    price: 30000,
-    thumbnail: "/image.jpg",
-    stock: 15
-
-}
-
-async function prueba() {
-
-    const manager = new ProductManager('Products.json')
-    //Crea Productos
-    await manager.addProduct(producto1)
-    await manager.addProduct(producto2)
-    await manager.addProduct(producto3)
-    await manager.addProduct(producto4)
-    //Busca Productos por ID
-    await manager.getProductById(1)
-    //Muestra todos los productos
-    const products = await manager.getProducts()
-    console.log(products)
-    //Elimina producto por ID
-    await manager.deleteProductById(10) 
-    //Actualiza producto poniendo la id y el elemento a actualizar con el dato que se quiera actualizar
-    await manager.updateProduct(3, { nombre: "mother" })
-
-
-}
-
-prueba() */
