@@ -1,5 +1,7 @@
-import ProductManager from "../../ProductManager.js"
-const productManager = new ProductManager('./product.json')
+import ProductManager from "../../ProductManager.js";
+import { __dirname } from "../utils.js";
+
+const productManager = new ProductManager(__dirname + '/productos.json');
 
 export const validarDatos = (req, res, next) => {
     const obj = req.body

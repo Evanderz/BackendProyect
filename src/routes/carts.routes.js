@@ -1,39 +1,70 @@
 import { Router } from "express";
-import CartManager from "../../CartManager.js";
-import {validarIdC } from "../middlewares/cartsValidations.middleware.js"
-import { validarIdP } from "../middlewares/productsValidations.middleware.js"
-
+import ProductManager from "../../ProductManager.js";
+import { validarDatos, validarIdP } from "../middlewares/productsValidations.middleware.js";
+import { __dirname } from "../utils.js";
 
 const router = Router()
 
-const cartManager = new CartManager('./carts.json')
+const productManager = new ProductManager(__dirname + '/productos.json');
 
-router.post('/',async (req, res) => {
+//Muestra todos los productos
+router.get('/', async (req, res) => {
 
-    const createCart = await cartManager.addCart()
-    res.json({ message: 'Cart created', product: createCart })
+    const limit = req.query.limit;
 
-})
+    const products = await productManager.getProducts();
 
-router.get('/:idCart',validarIdC,async(req,res)=>{
-
-    const { idCart } = req.params
-    const searchCart = await cartManager.getCartById(+idCart)
-    res.json({searchCart})
-
-
-})
-
-router.post('/:idCart/product/:idProduct',validarIdC,validarIdP, async (req,res)=>{
-
-const {idCart} = req.params
-const {idProduct} = req.params
-
-const searchCart = await cartManager.updateCart(+idCart,+idProduct)
-
-res.json("Producto agregado")
-
+    if (limit) {
+        const limitedProducts = products.slice(0, limit);
+        res.json(limitedProducts);
+    } else {
+        res.json(products);
+    }
 
 })
 
+//Agrega un producto el cual recibe por el body
+router.post('/', validarDatos, async (req, res) => {
+
+    const obj = req.body
+    const createProduct = await productManager.addProduct(obj)
+    res.json({ message: 'Product created', product: createProduct })
+
+
+
+})
+
+router.put('/:idProduct', validarIdP, async (req, res) => {
+
+    const { idProduct } = req.params
+    const obj = req.body
+    if (obj.id) {
+
+        res.json({ message: "No se puede modificar el ID" })
+
+    } else {
+
+        const searchProduct = await productManager.updateProduct(+idProduct, obj)
+
+        res.json({ message: 'Producto Actualizado' })
+
+    }
+})
+
+router.delete('/:idProduct', validarIdP, async (req, res) => {
+
+    const { idProduct } = req.params
+    const deleteProduct = await productManager.deleteProductById(+idProduct)
+
+    res.json({ message: "Producto Eliminado" })
+
+})
+
+router.get('/:idProduct',validarIdP, async (req, res) => {
+
+    const { idProduct } = req.params
+    const searchProduct = await productManager.getProductById(+idProduct)
+    res.json({searchProduct})
+
+})
 export default router

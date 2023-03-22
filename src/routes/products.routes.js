@@ -1,15 +1,17 @@
 import { Router } from "express";
 import ProductManager from "../../ProductManager.js";
 import { validarDatos, validarIdP } from "../middlewares/productsValidations.middleware.js";
+import { __dirname } from "../utils.js";
+
 
 const router = Router()
 
-const productManager = new ProductManager('./product.json')
+const productManager = new ProductManager(__dirname + '/productos.json');
 
 //Muestra todos los productos
 router.get('/', async (req, res) => {
 
-    const limit = req.query.limit;
+    const limit = req.query.limit;A
 
     const products = await productManager.getProducts();
 
