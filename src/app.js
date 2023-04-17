@@ -1,14 +1,19 @@
 import express from 'express';
+import { Router } from 'express';
 import productsRouter from './routes/products.routes.js'
 import cartsRouter from './routes/carts.routes.js'
 import viewsRouter from './routes/views.router.js';
 import { __dirname } from './utils.js';
 import handlebars from 'express-handlebars';
 import { Server } from 'socket.io';
-import ProductManager from '../ProductManager.js';
+import ProductManager from './Dao/ProductManagerMongo.js';
+import MessageManager from './Dao/MessageManagerMongo.js';
+import './db/dbConfig.js'
 
 
 const app = express();
+const router = Router();
+const messageManager = new MessageManager()
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,53 +39,42 @@ const httpServer = app.listen(PORT, () => {
     console.log(`Servidor express escuchando en el puerto ${PORT}`);
 });
 
-// inicializar el socket.io con el servidor http
-const io = new Server(httpServer);
 
 
+//websocket
+const infoMensajes = []
 
-const productManager = new ProductManager(__dirname + '/productos.json');
 
-// obtener los productos del archivo productos.json
-const products = await productManager.getProducts();
+const productManager = new ProductManager()
+
 
 // configurar el socket.io para que escuche los eventos de conexión y desconexión de clientes
-io.on('connection', (socket) => {
-    console.log(`Un cliente se ha conectado ${socket.id}`);
 
-    // Practica teoria
-    socket.emit('message0', 'Bienvenido! estas conectado con el servidor');
+    const socketServer = new Server(httpServer);
+    socketServer.on("connection", async socket => {
+        const products = await productManager.getAll();
+        const messages = await messageManager.getAllMessages();
 
-    socket.broadcast.emit('message1', `Un nuevo cliente se ha conectado con id: ${socket.id}`);
+        socket.emit("products", products);
 
-    socket.on('createProduct', async (product) => {
+        socket.on("newProduct", async data => {
+            await productManager.addProduct(data);
+            const products = await productManager.getAll();
+            socket.emit("products", products);
+        });
 
-        const productsPush = products;
-        productsPush.push(product);
+        socket.on("deleteProduct", async id => {
+            await productManager.deleteById(id);
+            const products = await productManager.getAll();
+            socket.emit("products", products);
+        });
 
-        io.emit('product-list', productsPush);
+        socket.emit("messages", messages);
 
-        socket.broadcast.emit('message3', `El cliente con id: ${socket.id} ha creado un producto nuevo`);
-
-        await productManager.addProduct(product);
+        socket.on("newMessage", async data => {
+            await messageManager.addMessage(data);
+            socket.emit("messages", messages);
+        });
     });
 
-    socket.on('deleteProduct', async (id) => {
-
-        const productsPush = products.filter((product) => product.id !== id);
-
-        io.emit('product-list', productsPush);
-
-        socket.broadcast.emit('message4', `El cliente con id: ${socket.id} ha eliminado un producto con id: ${id}`);
-
-        await productManager.deleteProduct(id);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Un cliente se ha desconectado');
-
-        io.emit('message2', `Un cliente se ha desconectado con id: ${socket.id}`);
-
-    });
-});
 

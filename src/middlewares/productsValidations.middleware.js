@@ -1,4 +1,4 @@
-import ProductManager from "../../ProductManager.js";
+import ProductManager from "../Dao/ProductManager.js";
 import { __dirname } from "../utils.js";
 
 const productManager = new ProductManager(__dirname + '/productos.json');

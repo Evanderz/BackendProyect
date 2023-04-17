@@ -1,70 +1,47 @@
 import { Router } from "express";
-import ProductManager from "../../ProductManager.js";
-import { validarDatos, validarIdP } from "../middlewares/productsValidations.middleware.js";
-import { __dirname } from "../utils.js";
-
-const router = Router()
-
-const productManager = new ProductManager(__dirname + '/productos.json');
-
-//Muestra todos los productos
-router.get('/', async (req, res) => {
-
-    const limit = req.query.limit;
-
-    const products = await productManager.getProducts();
-
-    if (limit) {
-        const limitedProducts = products.slice(0, limit);
-        res.json(limitedProducts);
-    } else {
-        res.json(products);
-    }
-
-})
-
-//Agrega un producto el cual recibe por el body
-router.post('/', validarDatos, async (req, res) => {
-
-    const obj = req.body
-    const createProduct = await productManager.addProduct(obj)
-    res.json({ message: 'Product created', product: createProduct })
+import CartManager from "../Dao/CartManagerMongo.js";
+import ProductManager from "../Dao/ProductManagerMongo.js";
 
 
+const router = Router();
+const productManager = new ProductManager();
+const cartManager = new CartManager();
+const notFound = { error: "Cart not found" };
 
-})
+router.post("/", async (req, res) => {
+  const cart = await cartManager.createCart();
+  res.status(201).json(cart);
+});
 
-router.put('/:idProduct', validarIdP, async (req, res) => {
+router.get("/:cid", async (req, res) => {
+  const { cid } = req.params;
+  const cart = await cartManager.getById(cid);
+  !cart ? res.status(404).json(notFound) : res.status(200).json(cart);
+});
 
-    const { idProduct } = req.params
-    const obj = req.body
-    if (obj.id) {
+router.put("/:cid", async (req, res) => {
+  const { cid } = req.params;
+});
 
-        res.json({ message: "No se puede modificar el ID" })
+router.delete("/:cid", async (req, res) => {
+  const { cid } = req.params;
+  const cart = cartManager.deleteAllProducts(cid);
+  const updatedCart = await cartManager.getById(cid);
+  !cart ? res.status(404).json(notFound) : res.status(200).json(updatedCart);
+});
 
-    } else {
+router.post("/:cid/product/:pid", async (req, res) => {
+  const { cid, pid } = req.params;
+  const cart = await cartManager.addToCart(cid, pid);
+  const updatedCart = await cartManager.getById(cid);
+  !cart ? res.status(404).json(notFound) : res.status(200).json(updatedCart);
+});
 
-        const searchProduct = await productManager.updateProduct(+idProduct, obj)
+router.delete("/:cid/product/:pid", async (req, res) => {
+  const { cid, pid } = req.params;
+  const cart = await cartManager.deleteProduct(cid, pid);
+  const updatedCart = await cartManager.getById(cid);
+  !cart ? res.status(404).json(notFound) : res.status(200).json(updatedCart);
+});
 
-        res.json({ message: 'Producto Actualizado' })
-
-    }
-})
-
-router.delete('/:idProduct', validarIdP, async (req, res) => {
-
-    const { idProduct } = req.params
-    const deleteProduct = await productManager.deleteProductById(+idProduct)
-
-    res.json({ message: "Producto Eliminado" })
-
-})
-
-router.get('/:idProduct',validarIdP, async (req, res) => {
-
-    const { idProduct } = req.params
-    const searchProduct = await productManager.getProductById(+idProduct)
-    res.json({searchProduct})
-
-})
-export default router
+export default router;
